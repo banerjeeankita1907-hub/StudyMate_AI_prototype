@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyMate AI — Your Personalized Learning Companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F1626;
+    --bg-2:#0B111E;
+    --panel:#161F33;
+    --panel-2:#1B2640;
+    --panel-3:#212C4A;
+    --rule:#2A3654;
+    --rule-soft:#212C48;
+    --accent:#F2A93B;
+    --accent-soft:#f2a93b22;
+    --accent-dim:#8a6a2e;
+    --ai:#5FBF8A;
+    --ai-soft:#5fbf8a22;
+    --danger:#E0766E;
+    --text:#EDEFF5;
+    --muted:#8B93A7;
+    --muted-2:#5C6480;
+    --serif:'Fraunces', serif;
+    --sans:'Inter', sans-serif;
+    --mono:'JetBrains Mono', monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  ::selection{background:var(--accent); color:#1a1200;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:
+      radial-gradient(circle at 85% -10%, #1c2947 0%, transparent 45%),
+      repeating-linear-gradient(180deg, transparent 0 38px, rgba(255,255,255,0.022) 38px 39px),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    min-height:100vh;
+    padding:32px 20px 70px;
+  }
+  .wrap{max-width:980px; margin:0 auto;}
+
+  /* ---------- HEADER ---------- */
+  header{
+    display:flex; align-items:flex-end; justify-content:space-between;
+    border-bottom:2px solid var(--rule);
+    padding-bottom:20px; margin-bottom:22px;
+    flex-wrap:wrap; gap:16px;
+  }
+  .brand-mark{
+    font-family:var(--mono); font-size:11px; letter-spacing:.16em; color:var(--accent);
+    text-transform:uppercase; margin-bottom:8px; display:flex; align-items:center; gap:7px;
+  }
+  .brand-mark .diamond{display:inline-block; width:7px; height:7px; background:var(--accent); transform:rotate(45deg);}
+  h1{font-family:var(--serif); font-weight:700; font-size:2.3rem; letter-spacing:-.01em;}
+  .tagline{color:var(--muted); font-size:.92rem; max-width:340px; line-height:1.5;}
+
+  .stats-strip{
+    display:flex; gap:10px; align-items:center;
+  }
+  .stat-chip{
+    background:var(--panel); border:1px solid var(--rule); border-radius:10px;
+    padding:9px 14px; text-align:center; min-width:74px;
+  }
+  .stat-chip .num{font-family:var(--serif); font-size:1.3rem; font-weight:700; color:var(--accent); line-height:1;}
+  .stat-chip .lbl{font-family:var(--mono); font-size:.62rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-top:2px;}
+  .stat-chip.streak .num{color:var(--ai);}
+
+  /* ---------- NAV ---------- */
+  nav{
+    display:flex; gap:2px; margin-bottom:24px; background:var(--panel); border-radius:12px;
+    padding:5px; border:1px solid var(--rule); flex-wrap:wrap;
+  }
+  .tab{
+    flex:1; min-width:110px; text-align:center; padding:12px 8px; border-radius:8px; cursor:pointer;
+    font-size:.85rem; font-weight:600; color:var(--muted); transition:all .15s ease;
+    font-family:var(--mono); letter-spacing:.01em; user-select:none;
+  }
+  .tab.active{background:var(--accent); color:#1a1200; box-shadow:0 2px 12px rgba(242,169,59,.25);}
+  .tab:not(.active):hover{color:var(--text); background:var(--panel-2);}
+
+  /* ---------- PANELS ---------- */
+  .panel{
+    background:var(--panel); border:1px solid var(--rule); border-radius:16px;
+    padding:28px; display:none; animation:fadeIn .25s ease;
+  }
+  .panel.active{display:block;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  .panel-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:8px;}
+  .panel-title{font-family:var(--serif); font-size:1.3rem; font-weight:600;}
+  .panel-sub{color:var(--muted); font-size:.85rem; margin-top:2px;}
+
+  label{display:block; font-size:.8rem; color:var(--muted); margin-bottom:7px; font-weight:600; letter-spacing:.01em;}
+  input[type=text], input[type=number], textarea, select{
+    width:100%; background:var(--panel-2); border:1px solid var(--rule); color:var(--text);
+    border-radius:9px; padding:12px 13px; font-family:var(--sans); font-size:.95rem;
+    margin-bottom:16px; outline:none; transition:border-color .15s;
+  }
+  input:focus, textarea:focus, select:focus{border-color:var(--accent);}
+  textarea{resize:vertical; min-height:76px;}
+  ::placeholder{color:var(--muted-2);}
+
+  .row{display:flex; gap:14px; flex-wrap:wrap;}
+  .row > div{flex:1; min-width:150px;}
+
+  .btn-row{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  button.go{
+    background:var(--accent); color:#1a1200; border:none; padding:13px 24px;
+    border-radius:9px; font-weight:700; font-size:.9rem; cursor:pointer;
+    font-family:var(--mono); letter-spacing:.02em; transition:transform .1s, box-shadow .15s;
+  }
+  button.go:hover{transform:translateY(-1px); box-shadow:0 4px 16px rgba(242,169,59,.3);}
+  button.go:active{transform:translateY(0);}
+  button.go:disabled{opacity:.5; cursor:wait; transform:none; box-shadow:none;}
+  button.ghost{
+    background:transparent; color:var(--muted); border:1px solid var(--rule); padding:13px 18px;
+    border-radius:9px; font-weight:600; font-size:.85rem; cursor:pointer; font-family:var(--mono);
+    transition:all .15s;
+  }
+  button.ghost:hover{color:var(--text); border-color:var(--accent);}
+
+  .chips{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;}
+  .chip{
+    background:var(--panel-2); border:1px solid var(--rule); color:var(--muted);
+    padding:6px 12px; border-radius:20px; font-size:.78rem; cursor:pointer; transition:all .15s;
+    font-family:var(--mono);
+  }
+  .chip:hover{border-color:var(--accent); color:var(--accent);}
+
+  /* ---------- OUTPUT ---------- */
+  .output{
+    margin-top:22px; border-top:1px dashed var(--rule); padding-top:20px;
+    font-size:.95rem; line-height:1.7;
+  }
+  .output.empty{color:var(--muted-2); font-style:italic; border-top:none; text-align:center; padding:30px 0;}
+  .output h3{font-family:var(--serif); color:var(--ai); font-size:1.15rem; margin:18px 0 8px; font-weight:600;}
+  .output h3:first-child{margin-top:0;}
+  .output ul, .output ol{margin:6px 0 10px 22px;}
+  .output li{margin-bottom:4px;}
+  .output p{margin:8px 0;}
+  .output strong{color:var(--accent);}
+  .output code{font-family:var(--mono); background:var(--panel-2); padding:2px 6px; border-radius:5px; font-size:.85em; color:var(--ai);}
+
+  .loading{display:flex; align-items:center; gap:10px; color:var(--muted); font-family:var(--mono); font-size:.85rem; padding:12px 0;}
+  .dot{width:6px; height:6px; border-radius:50%; background:var(--accent); animation:pulse 1s infinite ease-in-out;}
+  .dot:nth-child(2){animation-delay:.15s;} .dot:nth-child(3){animation-delay:.3s;}
+  @keyframes pulse{0%,100%{opacity:.3;}50%{opacity:1;}}
+
+  .error-box{
+    background:#3a221f; border:1px solid #5a332e; color:#f0aca5; border-radius:9px;
+    padding:12px 14px; font-size:.85rem; margin-top:16px;
+  }
+
+  .output-actions{display:flex; gap:8px; margin-top:16px; flex-wrap:wrap;}
+  .icon-btn{
+    background:var(--panel-2); border:1px solid var(--rule); color:var(--muted);
+    padding:7px 12px; border-radius:7px; font-size:.75rem; cursor:pointer; font-family:var(--mono);
+    transition:all .15s;
+  }
+  .icon-btn:hover{color:var(--accent); border-color:var(--accent);}
+
+  /* ---------- QUIZ ---------- */
+  .quiz-q{background:var(--panel-2); border:1px solid var(--rule); border-radius:12px; padding:18px; margin-bottom:14px;}
+  .quiz-q .qtext{font-weight:600; margin-bottom:10px; display:block;}
+  .quiz-q .opt{display:block; padding:10px 12px; border-radius:8px; margin-top:7px; cursor:pointer; border:1px solid var(--rule); font-size:.9rem; transition:all .12s;}
+  .quiz-q .opt:hover{background:var(--panel-3); border-color:var(--accent-dim);}
+  .quiz-q .opt.correct{border-color:var(--ai); background:var(--ai-soft); color:var(--ai);}
+  .quiz-q .opt.wrong{border-color:var(--danger); background:#e0766e18; color:var(--danger);}
+  .quiz-q .exp{margin-top:10px; color:var(--muted); font-size:.83rem; padding-top:8px; border-top:1px dashed var(--rule);}
+  .quiz-score{
+    text-align:center; padding:20px; background:var(--panel-2); border-radius:12px; margin-top:16px;
+    font-family:var(--serif); font-size:1.4rem; color:var(--accent); font-weight:700;
+  }
+
+  /* ---------- FLASHCARDS ---------- */
+  .fc-stage{display:flex; flex-direction:column; align-items:center; gap:16px; margin-top:10px;}
+  .fc-card{
+    width:100%; max-width:480px; height:260px; perspective:1200px; cursor:pointer;
+  }
+  .fc-inner{
+    position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d;
+  }
+  .fc-card.flipped .fc-inner{transform:rotateY(180deg);}
+  .fc-face{
+    position:absolute; inset:0; backface-visibility:hidden; border-radius:14px;
+    display:flex; align-items:center; justify-content:center; text-align:center; padding:24px;
+    border:1px solid var(--rule); font-size:1.05rem; line-height:1.5;
+  }
+  .fc-front{background:var(--panel-2); color:var(--text);}
+  .fc-back{background:linear-gradient(160deg, var(--ai-soft), var(--panel-2)); color:var(--ai); transform:rotateY(180deg); font-weight:600;}
+  .fc-hint{color:var(--muted-2); font-size:.78rem; font-family:var(--mono);}
+  .fc-nav{display:flex; align-items:center; gap:16px;}
+  .fc-progress{font-family:var(--mono); font-size:.82rem; color:var(--muted);}
+
+  /* ---------- DASHBOARD ---------- */
+  .dash-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:14px; margin-bottom:20px;}
+  .dash-card{background:var(--panel-2); border:1px solid var(--rule); border-radius:12px; padding:18px;}
+  .dash-card .num{font-family:var(--serif); font-size:2rem; font-weight:700; color:var(--accent);}
+  .dash-card .lbl{color:var(--muted); font-size:.82rem; margin-top:2px;}
+  .badges{display:flex; gap:10px; flex-wrap:wrap; margin-top:6px;}
+  .badge{
+    background:var(--panel-3); border:1px solid var(--rule); border-radius:20px; padding:7px 14px;
+    font-size:.78rem; font-family:var(--mono); color:var(--muted-2);
+  }
+  .badge.earned{color:var(--accent); border-color:var(--accent-dim); background:var(--accent-soft);}
+  .history-item{
+    display:flex; justify-content:space-between; align-items:center; padding:10px 0;
+    border-bottom:1px solid var(--rule-soft); font-size:.87rem;
+  }
+  .history-item:last-child{border-bottom:none;}
+  .history-item .tag{font-family:var(--mono); font-size:.68rem; color:var(--muted-2); background:var(--panel-3); padding:3px 8px; border-radius:5px; margin-right:8px;}
+  .empty-hist{color:var(--muted-2); font-style:italic; font-size:.85rem; text-align:center; padding:20px 0;}
+
+  /* ---------- TOAST ---------- */
+  #toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--panel-3); border:1px solid var(--accent-dim); color:var(--text);
+    padding:11px 20px; border-radius:9px; font-size:.85rem; font-family:var(--mono);
+    opacity:0; pointer-events:none; transition:all .25s; z-index:99; box-shadow:0 8px 30px rgba(0,0,0,.4);
+  }
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  footer{margin-top:36px; text-align:center; color:var(--muted-2); font-size:.78rem; font-family:var(--mono);}
+
+  @media (max-width:640px){
+    h1{font-size:1.7rem;} .stats-strip{width:100%; justify-content:flex-start;}
+    .panel{padding:18px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <span class="brand-mark"><span class="diamond"></span>NEURONAUTS PRESENTS</span>
+      <h1>StudyMate AI</h1>
+      <p class="tagline">A personal tutor that plans your study, answers your doubts, quizzes you, and drills you with flashcards — on demand.</p>
+    </div>
+    <div class="stats-strip">
+      <div class="stat-chip streak"><div class="num" id="streak-num">0</div><div class="lbl">Streak</div></div>
+      <div class="stat-chip"><div class="num" id="xp-num">0</div><div class="lbl">XP</div></div>
+      <div class="stat-chip"><div class="num" id="sessions-num">0</div><div class="lbl">Sessions</div></div>
+    </div>
+  </header>
+
+  <nav>
+    <div class="tab active" data-tab="plan">01 · Study Plan</div>
+    <div class="tab" data-tab="doubt">02 · Doubt Solver</div>
+    <div class="tab" data-tab="quiz">03 · Quiz Me</div>
+    <div class="tab" data-tab="flash">04 · Flashcards</div>
+    <div class="tab" data-tab="dash">05 · Dashboard</div>
+  </nav>
+
+  <!-- STUDY PLAN -->
+  <div class="panel active" id="panel-plan">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Day-wise Study Plan</div>
+        <div class="panel-sub">Tell it what and how long — get a structured plan back.</div>
+      </div>
+    </div>
+    <label>Subject / Topic</label>
+    <input type="text" id="plan-topic" placeholder="e.g. Operating Systems — Process Scheduling">
+    <div class="chips">
+      <div class="chip" onclick="fillChip('plan-topic','Data Structures — Linked Lists & Trees')">Linked Lists & Trees</div>
+      <div class="chip" onclick="fillChip('plan-topic','DBMS — Normalization & SQL Joins')">DBMS Normalization</div>
+      <div class="chip" onclick="fillChip('plan-topic','Machine Learning — Linear Regression')">ML: Linear Regression</div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Days available</label>
+        <input type="number" id="plan-days" placeholder="e.g. 5" min="1" max="30">
+      </div>
+      <div>
+        <label>Your current level</label>
+        <select id="plan-level">
+          <option>Beginner</option>
+          <option>Intermediate</option>
+          <option>Advanced</option>
+        </select>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="go" id="plan-btn" onclick="generatePlan()">Generate study plan</button>
+      <button class="ghost" onclick="clearOutput('plan')">Clear</button>
+    </div>
+    <div class="output empty" id="plan-output">Your day-wise plan will appear here.</div>
+  </div>
+
+  <!-- DOUBT SOLVER -->
+  <div class="panel" id="panel-doubt">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Doubt Solver</div>
+        <div class="panel-sub">Ask anything — get a simple, jargon-free explanation.</div>
+      </div>
+    </div>
+    <label>What's confusing you?</label>
+    <textarea id="doubt-text" placeholder="e.g. What is the difference between TCP and UDP? Explain like I'm new to networking."></textarea>
+    <div class="btn-row">
+      <button class="go" id="doubt-btn" onclick="solveDoubt()">Explain it simply</button>
+      <button class="ghost" onclick="clearOutput('doubt')">Clear</button>
+    </div>
+    <div class="output empty" id="doubt-output">Your explanation will appear here.</div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="panel" id="panel-quiz">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Quiz Me</div>
+        <div class="panel-sub">Instant multiple-choice questions with feedback.</div>
+      </div>
+    </div>
+    <label>Topic to be quizzed on</label>
+    <input type="text" id="quiz-topic" placeholder="e.g. Data Structures — Linked Lists">
+    <div class="btn-row">
+      <button class="go" id="quiz-btn" onclick="generateQuiz()">Generate quiz</button>
+      <button class="ghost" onclick="clearOutput('quiz')">Clear</button>
+    </div>
+    <div class="output empty" id="quiz-output">Your quiz will appear here.</div>
+  </div>
+
+  <!-- FLASHCARDS -->
+  <div class="panel" id="panel-flash">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Flashcards</div>
+        <div class="panel-sub">Quick-fire terms and definitions. Click a card to flip it.</div>
+      </div>
+    </div>
+    <label>Topic</label>
+    <input type="text" id="flash-topic" placeholder="e.g. Computer Networks — OSI Model">
+    <div class="btn-row">
+      <button class="go" id="flash-btn" onclick="generateFlashcards()">Generate flashcards</button>
+      <button class="ghost" onclick="clearOutput('flash')">Clear</button>
+    </div>
+    <div class="output empty" id="flash-output">Your flashcards will appear here.</div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="panel" id="panel-dash">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Your Progress</div>
+        <div class="panel-sub">Tracked locally in this browser — no account needed.</div>
+      </div>
+      <button class="ghost" onclick="resetProgress()">Reset progress</button>
+    </div>
+    <div class="dash-grid">
+      <div class="dash-card"><div class="num" id="dash-xp">0</div><div class="lbl">Total XP earned</div></div>
+      <div class="dash-card"><div class="num" id="dash-streak">0</div><div class="lbl">Day streak</div></div>
+      <div class="dash-card"><div class="num" id="dash-quizzes">0</div><div class="lbl">Quizzes completed</div></div>
+      <div class="dash-card"><div class="num" id="dash-plans">0</div><div class="lbl">Study plans made</div></div>
+    </div>
+    <label>Badges</label>
+    <div class="badges" id="badges-wrap"></div>
+    <label style="margin-top:20px;">Recent activity</label>
+    <div id="history-wrap"></div>
+  </div>
+
+  <footer>StudyMate AI — Built for MAXIM CODE AI Software Innovation · Team NeuroNauts</footer>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ===================== STATE / STORAGE ===================== */
+const STORE_KEY = 'studymate_ai_state_v1';
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return { xp:0, streak:0, lastActiveDate:null, quizzesDone:0, plansMade:0, doubtsAsked:0, flashSetsMade:0, history:[] };
+}
+function saveState(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){}
+}
+let state = loadState();
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+function bumpStreak(){
+  const today = todayStr();
+  if(state.lastActiveDate === today) return; // already counted today
+  const yest = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+  if(state.lastActiveDate === yest){ state.streak += 1; }
+  else{ state.streak = 1; }
+  state.lastActiveDate = today;
+}
+
+function addXP(amount, label){
+  bumpStreak();
+  state.xp += amount;
+  state.history.unshift({ label, xp:amount, ts:Date.now() });
+  state.history = state.history.slice(0,12);
+  saveState();
+  renderHeaderStats();
+  renderDashboard();
+  showToast(`+${amount} XP — ${label}`);
+}
+
+function renderHeaderStats(){
+  document.getElementById('streak-num').innerText = state.streak;
+  document.getElementById('xp-num').innerText = state.xp;
+  document.getElementById('sessions-num').innerText = state.history.length;
+}
+
+function renderDashboard(){
+  document.getElementById('dash-xp').innerText = state.xp;
+  document.getElementById('dash-streak').innerText = state.streak;
+  document.getElementById('dash-quizzes').innerText = state.quizzesDone;
+  document.getElementById('dash-plans').innerText = state.plansMade;
+
+  const badgeDefs = [
+    { id:'first-step', name:'First Step', cond: state.history.length >= 1 },
+    { id:'quiz-whiz', name:'Quiz Whiz', cond: state.quizzesDone >= 3 },
+    { id:'planner', name:'Planner Pro', cond: state.plansMade >= 3 },
+    { id:'streaker', name:'3-Day Streak', cond: state.streak >= 3 },
+    { id:'xp-100', name:'100 XP Club', cond: state.xp >= 100 },
+  ];
+  const wrap = document.getElementById('badges-wrap');
+  wrap.innerHTML = badgeDefs.map(b => `<div class="badge ${b.cond ? 'earned' : ''}">${b.cond ? '✓ ' : ''}${b.name}</div>`).join('');
+
+  const hwrap = document.getElementById('history-wrap');
+  if(state.history.length === 0){
+    hwrap.innerHTML = '<div class="empty-hist">No activity yet — try generating a study plan or quiz.</div>';
+  }else{
+    hwrap.innerHTML = state.history.map(h => `
+      <div class="history-item">
+        <span><span class="tag">+${h.xp} XP</span>${h.label}</span>
+        <span style="color:var(--muted-2)">${new Date(h.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>
+      </div>`).join('');
+  }
+}
+
+function resetProgress(){
+  if(!confirm('Reset all local progress? This cannot be undone.')) return;
+  state = { xp:0, streak:0, lastActiveDate:null, quizzesDone:0, plansMade:0, doubtsAsked:0, flashSetsMade:0, history:[] };
+  saveState();
+  renderHeaderStats();
+  renderDashboard();
+  showToast('Progress reset');
+}
+
+/* ===================== TOAST ===================== */
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.innerText = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove('show'), 2600);
+}
+
+/* ===================== TABS ===================== */
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
+    if(tab.dataset.tab === 'dash') renderDashboard();
+  });
+});
+
+function fillChip(inputId, val){
+  document.getElementById(inputId).value = val;
+}
+
+function clearOutput(kind){
+  const out = document.getElementById(kind+'-output');
+  out.className = 'output empty';
+  out.innerText = 'Cleared. Ready for your next request.';
+}
+
+/* ===================== HELPERS ===================== */
+function setLoading(el, msg){
+  el.classList.remove('empty');
+  el.innerHTML = `<div class="loading"><span class="dot"></span><span class="dot"></span><span class="dot"></span>${msg}</div>`;
+}
+
+function setError(el, msg){
+  el.classList.remove('empty');
+  el.innerHTML = `<div class="error-box">⚠ ${msg}</div>`;
+}
+
+function mdToHtml(md){
+  let html = md
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^## (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^# (.*$)/gim, '<h3>$1</h3>')
+    .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/gim, '<code>$1</code>');
+  html = html.replace(/^(?:- |\d+\. )(.*)$/gim, '<li>$1</li>');
+  html = html.replace(/(<li>.*<\/li>)(\n(?!<li>))/gs, '$1</ul>\n');
+  html = html.replace(/(<li>[\s\S]*?<\/li>)/g, m => '<ul>'+m+'</ul>');
+  html = html.replace(/<\/ul>\s*<ul>/g, '');
+  return html.split('\n\n').map(p => p.trim().startsWith('<') ? p : (p.trim() ? `<p>${p}</p>` : '')).join('\n');
+}
+
+async function callClaude(prompt, maxTokens=1000){
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: maxTokens,
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+  if(!response.ok) throw new Error('API request failed');
+  const data = await response.json();
+  return data.content.map(b => b.text || "").join("\n");
+}
+
+function withButtonLoading(btn, fn){
+  return async (...args) => {
+    btn.disabled = true;
+    const orig = btn.innerText;
+    btn.innerText = 'Working…';
+    try{ await fn(...args); }
+    finally{ btn.disabled = false; btn.innerText = orig; }
+  };
+}
+
+/* ===================== STUDY PLAN ===================== */
+async function generatePlan(){
+  const topic = document.getElementById('plan-topic').value.trim();
+  const days = document.getElementById('plan-days').value.trim() || "5";
+  const level = document.getElementById('plan-level').value;
+  const out = document.getElementById('plan-output');
+  const btn = document.getElementById('plan-btn');
+  if(!topic){ setError(out, "Please enter a topic first."); return; }
+  btn.disabled = true;
+  setLoading(out, "Building your study plan…");
+  try{
+    const prompt = `You are a helpful academic tutor. Create a day-wise study plan for the topic "${topic}" spread over ${days} days, for a ${level} level student. For each day give: a short heading, 2-3 focused sub-topics, and one suggested practice activity. Keep it concise and practical. Format using markdown headings (###) for each day and bullet lists (-) for content. No preamble.`;
+    const text = await callClaude(prompt, 1200);
+    out.innerHTML = mdToHtml(text);
+    addOutputActions(out, topic, text);
+    state.plansMade += 1;
+    addXP(15, `Study plan: ${topic}`);
+  }catch(e){
+    setError(out, "Couldn't reach the AI right now. Please check your connection and try again.");
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+function addOutputActions(out, title, rawText){
+  const bar = document.createElement('div');
+  bar.className = 'output-actions';
+  bar.innerHTML = `<button class="icon-btn" onclick="copyText(this)">📋 Copy</button><button class="icon-btn" onclick="downloadText('${title.replace(/'/g,"")}', this)">⬇ Download .txt</button>`;
+  bar.dataset.raw = rawText;
+  out.appendChild(bar);
+}
+function copyText(btn){
+  const raw = btn.closest('.output-actions').dataset.raw;
+  navigator.clipboard.writeText(raw).then(()=> showToast('Copied to clipboard'));
+}
+function downloadText(title, btn){
+  const raw = btn.closest('.output-actions').dataset.raw;
+  const blob = new Blob([raw], {type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = (title || 'studymate').slice(0,40).replace(/[^a-z0-9]+/gi,'_') + '.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ===================== DOUBT SOLVER ===================== */
+async function solveDoubt(){
+  const q = document.getElementById('doubt-text').value.trim();
+  const out = document.getElementById('doubt-output');
+  const btn = document.getElementById('doubt-btn');
+  if(!q){ setError(out, "Please type your doubt first."); return; }
+  btn.disabled = true;
+  setLoading(out, "Thinking it through…");
+  try{
+    const prompt = `You are a patient, friendly tutor explaining concepts to a student in simple, clear language with a short relatable example. Question: "${q}". Keep the explanation under 200 words, use markdown headings (###) and bullet points (-) where helpful. No preamble.`;
+    const text = await callClaude(prompt, 700);
+    out.innerHTML = mdToHtml(text);
+    addOutputActions(out, 'doubt', text);
+    state.doubtsAsked += 1;
+    addXP(10, 'Doubt solved');
+  }catch(e){
+    setError(out, "Couldn't reach the AI right now. Please try again.");
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+/* ===================== QUIZ ===================== */
+let quizScoreTracker = { correct:0, total:0 };
+
+async function generateQuiz(){
+  const topic = document.getElementById('quiz-topic').value.trim();
+  const out = document.getElementById('quiz-output');
+  const btn = document.getElementById('quiz-btn');
+  if(!topic){ setError(out, "Please enter a topic first."); return; }
+  btn.disabled = true;
+  setLoading(out, "Writing quiz questions…");
+  try{
+    const prompt = `Create exactly 4 multiple-choice quiz questions on the topic "${topic}" for an engineering student, ranging from easy to slightly challenging. Respond ONLY with valid JSON, no markdown fences, no preamble, in this exact shape:
+[{"question":"...", "options":["A","B","C","D"], "answerIndex":0, "explanation":"..."}]`;
+    const text = await callClaude(prompt, 1200);
+    const clean = text.replace(/```json|```/g, '').trim();
+    const quiz = JSON.parse(clean);
+    quizScoreTracker = { correct:0, total:quiz.length };
+    renderQuiz(quiz, out);
+    state.quizzesDone += 1;
+    addXP(20, `Quiz: ${topic}`);
+  }catch(e){
+    setError(out, "Couldn't generate the quiz right now. Please try again.");
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+function renderQuiz(quiz, out){
+  out.classList.remove('empty');
+  out.innerHTML = '';
+  quiz.forEach((q, qi) => {
+    const box = document.createElement('div');
+    box.className = 'quiz-q';
+    box.innerHTML = `<span class="qtext">Q${qi+1}. ${q.question}</span>`;
+    q.options.forEach((opt, oi) => {
+      const o = document.createElement('span');
+      o.className = 'opt';
+      o.innerText = opt;
+      o.onclick = () => {
+        box.querySelectorAll('.opt').forEach(el => el.style.pointerEvents='none');
+        const isCorrect = oi === q.answerIndex;
+        o.classList.add(isCorrect ? 'correct' : 'wrong');
+        if(!isCorrect){ box.querySelectorAll('.opt')[q.answerIndex].classList.add('correct'); }
+        if(isCorrect) quizScoreTracker.correct += 1;
+        const exp = document.createElement('div');
+        exp.className = 'exp';
+        exp.innerText = q.explanation;
+        box.appendChild(exp);
+        checkQuizDone(out, quiz.length);
+      };
+      box.appendChild(o);
+    });
+    out.appendChild(box);
+  });
+}
+
+function checkQuizDone(out, total){
+  const answered = out.querySelectorAll('.exp').length;
+  if(answered === total){
+    const score = document.createElement('div');
+    score.className = 'quiz-score';
+    score.innerText = `You scored ${quizScoreTracker.correct} / ${total}`;
+    out.appendChild(score);
+    if(quizScoreTracker.correct === total) addXP(10, 'Perfect quiz score! 🎯');
+  }
+}
+
+/* ===================== FLASHCARDS ===================== */
+let flashDeck = [];
+let flashIndex = 0;
+
+async function generateFlashcards(){
+  const topic = document.getElementById('flash-topic').value.trim();
+  const out = document.getElementById('flash-output');
+  const btn = document.getElementById('flash-btn');
+  if(!topic){ setError(out, "Please enter a topic first."); return; }
+  btn.disabled = true;
+  setLoading(out, "Writing flashcards…");
+  try{
+    const prompt = `Create exactly 6 flashcards (term + short definition, under 20 words each) on the topic "${topic}" for an engineering student. Respond ONLY with valid JSON, no markdown fences, no preamble, in this exact shape:
+[{"term":"...", "definition":"..."}]`;
+    const text = await callClaude(prompt, 900);
+    const clean = text.replace(/```json|```/g, '').trim();
+    flashDeck = JSON.parse(clean);
+    flashIndex = 0;
+    renderFlashcard(out);
+    state.flashSetsMade += 1;
+    addXP(12, `Flashcards: ${topic}`);
+  }catch(e){
+    setError(out, "Couldn't generate flashcards right now. Please try again.");
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+function renderFlashcard(out){
+  out.classList.remove('empty');
+  const card = flashDeck[flashIndex];
+  out.innerHTML = `
+    <div class="fc-stage">
+      <div class="fc-card" id="fc-card" onclick="this.classList.toggle('flipped')">
+        <div class="fc-inner">
+          <div class="fc-face fc-front">${card.term}</div>
+          <div class="fc-face fc-back">${card.definition}</div>
+        </div>
+      </div>
+      <div class="fc-hint">Click card to flip</div>
+      <div class="fc-nav">
+        <button class="ghost" onclick="prevFlash()">← Prev</button>
+        <span class="fc-progress">${flashIndex+1} / ${flashDeck.length}</span>
+        <button class="ghost" onclick="nextFlash()">Next →</button>
+      </div>
+    </div>`;
+}
+function nextFlash(){ flashIndex = (flashIndex + 1) % flashDeck.length; renderFlashcard(document.getElementById('flash-output')); }
+function prevFlash(){ flashIndex = (flashIndex - 1 + flashDeck.length) % flashDeck.length; renderFlashcard(document.getElementById('flash-output')); }
+
+/* ===================== INIT ===================== */
+renderHeaderStats();
+renderDashboard();
+</script>
+</body>
+</html>
