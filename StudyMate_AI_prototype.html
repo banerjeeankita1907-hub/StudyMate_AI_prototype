@@ -688,7 +688,33 @@ function renderQuiz(quiz, out){
     question.className = 'qtext';
     question.textContent = `Q${qi+1}. ${q.question}`;
     box.appendChild(question);
-    q.options.forEach((opt, oi) => {function checkQuizDone(out, total){
+    q.options.forEach((opt, oi) => {
+      const option = document.createElement('span');
+      option.className = 'opt';
+      option.textContent = opt;
+      option.addEventListener('click', () => {
+        box.querySelectorAll('.opt').forEach(element => {
+          element.style.pointerEvents = 'none';
+        });
+        const isCorrect = oi === q.answerIndex;
+        option.classList.add(isCorrect ? 'correct' : 'wrong');
+        if(!isCorrect){
+          box.querySelectorAll('.opt')[q.answerIndex].classList.add('correct');
+        }
+        if(isCorrect) quizScoreTracker.correct += 1;
+        const explanation = document.createElement('div');
+        explanation.className = 'exp';
+        explanation.textContent = q.explanation;
+        box.appendChild(explanation);
+        checkQuizDone(out, quiz.length);
+      });
+      box.appendChild(option);
+    });
+    out.appendChild(box);
+  });
+}
+
+function checkQuizDone(out, total){
   const answered = out.querySelectorAll('.exp').length;
   if(answered === total){
     const score = document.createElement('div');
