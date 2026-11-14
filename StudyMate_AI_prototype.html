@@ -372,12 +372,37 @@
 /* ===================== STATE / STORAGE ===================== */
 const STORE_KEY = 'studymate_ai_state_v1';
 
+function defaultState(){
+  return { xp:0, streak:0, lastActiveDate:null, quizzesDone:0, plansMade:0, doubtsAsked:0, flashSetsMade:0, history:[] };
+}
+function safeCounter(value){
+  return Number.isFinite(value) ? Math.max(0, Math.min(1000000, Math.floor(value))) : 0;
+}
+function normalizeState(value){
+  const base = defaultState();
+  if(!value || typeof value !== 'object' || Array.isArray(value)) return base;
+  const history = Array.isArray(value.history) ? value.history.slice(0, 12).map(item => ({
+    label: typeof item?.label === 'string' ? item.label.slice(0, 120) : 'Study activity',
+    xp: safeCounter(item?.xp),
+    ts: Number.isFinite(item?.ts) ? item.ts : Date.now()
+  })) : [];
+  return {
+    xp: safeCounter(value.xp),
+    streak: safeCounter(value.streak),
+    lastActiveDate: typeof value.lastActiveDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.lastActiveDate) ? value.lastActiveDate : null,
+    quizzesDone: safeCounter(value.quizzesDone),
+    plansMade: safeCounter(value.plansMade),
+    doubtsAsked: safeCounter(value.doubtsAsked),
+    flashSetsMade: safeCounter(value.flashSetsMade),
+    history
+  };
+}
 function loadState(){
   try{
     const raw = localStorage.getItem(STORE_KEY);
-    if(raw) return JSON.parse(raw);
+    if(raw) return normalizeState(JSON.parse(raw));
   }catch(e){}
-  return { xp:0, streak:0, lastActiveDate:null, quizzesDone:0, plansMade:0, doubtsAsked:0, flashSetsMade:0, history:[] };
+  return defaultState();
 }
 function saveState(){
   try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){}
@@ -434,7 +459,7 @@ function renderDashboard(){
   }else{
     hwrap.innerHTML = state.history.map(h => `
       <div class="history-item">
-        <span><span class="tag">+${h.xp} XP</span>${h.label}</span>
+        <span><span class="tag">+${h.xp} XP</span>${escapeHtml(h.label)}</span>
         <span style="color:var(--muted-2)">${new Date(h.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>
       </div>`).join('');
   }
@@ -491,8 +516,13 @@ function setError(el, msg){
   el.innerHTML = `<div class="error-box">⚠ ${msg}</div>`;
 }
 
+function escapeHtml(value){
+  return String(value ?? '').replace(/[&<>"']/g, character => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  })[character]);
+}
 function mdToHtml(md){
-  let html = md
+  let html = escapeHtml(md)
     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
     .replace(/^## (.*$)/gim, '<h3>$1</h3>')
     .replace(/^# (.*$)/gim, '<h3>$1</h3>')
@@ -506,18 +536,16 @@ function mdToHtml(md){
 }
 
 async function callClaude(prompt, maxTokens=1000){
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+  const response = await fetch("/api/ai", {
     method: "POST",
     headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: maxTokens,
-      messages: [{ role: "user", content: prompt }]
-    })
+    credentials: "same-origin",
+    body: JSON.stringify({ prompt, maxTokens })
   });
-  if(!response.ok) throw new Error('API request failed');
-  const data = await response.json();
-  return data.content.map(b => b.text || "").join("\n");
+  const data = await response.json().catch(() => ({}));
+  if(!response.ok) throw new Error(data.error || 'AI request failed');
+  if(typeof data.text !== 'string' || !data.text.trim()) throw new Error('AI response was empty');
+  return data.text;
 }
 
 function withButtonLoading(btn, fn){
@@ -557,22 +585,37 @@ async function generatePlan(){
 function addOutputActions(out, title, rawText){
   const bar = document.createElement('div');
   bar.className = 'output-actions';
-  bar.innerHTML = `<button class="icon-btn" onclick="copyText(this)">📋 Copy</button><button class="icon-btn" onclick="downloadText('${title.replace(/'/g,"")}', this)">⬇ Download .txt</button>`;
-  bar.dataset.raw = rawText;
+
+  const copyButton = document.createElement('button');
+  copyButton.className = 'icon-btn';
+  copyButton.type = 'button';
+  copyButton.textContent = '📋 Copy';
+  copyButton.addEventListener('click', async () => {
+    try{
+      await navigator.clipboard.writeText(rawText);
+      showToast('Copied to clipboard');
+    }catch(e){
+      showToast('Clipboard access is unavailable in this browser');
+    }
+  });
+
+  const downloadButton = document.createElement('button');
+  downloadButton.className = 'icon-btn';
+  downloadButton.type = 'button';
+  downloadButton.textContent = '⬇ Download .txt';
+  downloadButton.addEventListener('click', () => downloadText(title, rawText));
+
+  bar.append(copyButton, downloadButton);
   out.appendChild(bar);
 }
-function copyText(btn){
-  const raw = btn.closest('.output-actions').dataset.raw;
-  navigator.clipboard.writeText(raw).then(()=> showToast('Copied to clipboard'));
-}
-function downloadText(title, btn){
-  const raw = btn.closest('.output-actions').dataset.raw;
-  const blob = new Blob([raw], {type:'text/plain'});
+function downloadText(title, raw){
+  const blob = new Blob([raw], {type:'text/plain;charset=utf-8'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = (title || 'studymate').slice(0,40).replace(/[^a-z0-9]+/gi,'_') + '.txt';
+  a.href = url;
+  a.download = (title || 'studymate').slice(0,40).replace(/[^a-z0-9]+/gi,'_') + '.txt';
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /* ===================== DOUBT SOLVER ===================== */
@@ -612,7 +655,7 @@ async function generateQuiz(){
 [{"question":"...", "options":["A","B","C","D"], "answerIndex":0, "explanation":"..."}]`;
     const text = await callClaude(prompt, 1200);
     const clean = text.replace(/```json|```/g, '').trim();
-    const quiz = JSON.parse(clean);
+    const quiz = validateQuiz(JSON.parse(clean));
     quizScoreTracker = { correct:0, total:quiz.length };
     renderQuiz(quiz, out);
     state.quizzesDone += 1;
@@ -624,36 +667,28 @@ async function generateQuiz(){
   }
 }
 
+function validateQuiz(input){
+  if(!Array.isArray(input) || input.length !== 4) throw new Error('Quiz must contain exactly four questions');
+  return input.map((item, index) => {
+    if(!item || typeof item.question !== 'string' || item.question.length > 500) throw new Error('Invalid quiz question ' + (index + 1));
+    if(!Array.isArray(item.options) || item.options.length !== 4 || !item.options.every(option => typeof option === 'string' && option.length <= 250)) throw new Error('Invalid options for question ' + (index + 1));
+    if(!Number.isInteger(item.answerIndex) || item.answerIndex < 0 || item.answerIndex > 3) throw new Error('Invalid answer index for question ' + (index + 1));
+    if(typeof item.explanation !== 'string' || item.explanation.length > 1500) throw new Error('Invalid explanation for question ' + (index + 1));
+    return item;
+  });
+}
+
 function renderQuiz(quiz, out){
   out.classList.remove('empty');
   out.innerHTML = '';
   quiz.forEach((q, qi) => {
     const box = document.createElement('div');
     box.className = 'quiz-q';
-    box.innerHTML = `<span class="qtext">Q${qi+1}. ${q.question}</span>`;
-    q.options.forEach((opt, oi) => {
-      const o = document.createElement('span');
-      o.className = 'opt';
-      o.innerText = opt;
-      o.onclick = () => {
-        box.querySelectorAll('.opt').forEach(el => el.style.pointerEvents='none');
-        const isCorrect = oi === q.answerIndex;
-        o.classList.add(isCorrect ? 'correct' : 'wrong');
-        if(!isCorrect){ box.querySelectorAll('.opt')[q.answerIndex].classList.add('correct'); }
-        if(isCorrect) quizScoreTracker.correct += 1;
-        const exp = document.createElement('div');
-        exp.className = 'exp';
-        exp.innerText = q.explanation;
-        box.appendChild(exp);
-        checkQuizDone(out, quiz.length);
-      };
-      box.appendChild(o);
-    });
-    out.appendChild(box);
-  });
-}
-
-function checkQuizDone(out, total){
+    const question = document.createElement('span');
+    question.className = 'qtext';
+    question.textContent = `Q${qi+1}. ${q.question}`;
+    box.appendChild(question);
+    q.options.forEach((opt, oi) => {function checkQuizDone(out, total){
   const answered = out.querySelectorAll('.exp').length;
   if(answered === total){
     const score = document.createElement('div');
@@ -680,7 +715,7 @@ async function generateFlashcards(){
 [{"term":"...", "definition":"..."}]`;
     const text = await callClaude(prompt, 900);
     const clean = text.replace(/```json|```/g, '').trim();
-    flashDeck = JSON.parse(clean);
+    flashDeck = validateFlashcards(JSON.parse(clean));
     flashIndex = 0;
     renderFlashcard(out);
     state.flashSetsMade += 1;
@@ -692,6 +727,15 @@ async function generateFlashcards(){
   }
 }
 
+function validateFlashcards(input){
+  if(!Array.isArray(input) || input.length !== 6) throw new Error('Flashcard set must contain exactly six cards');
+  return input.map((item, index) => {
+    if(!item || typeof item.term !== 'string' || item.term.length < 1 || item.term.length > 200) throw new Error('Invalid term on flashcard ' + (index + 1));
+    if(typeof item.definition !== 'string' || item.definition.length < 1 || item.definition.length > 500) throw new Error('Invalid definition on flashcard ' + (index + 1));
+    return item;
+  });
+}
+
 function renderFlashcard(out){
   out.classList.remove('empty');
   const card = flashDeck[flashIndex];
@@ -699,8 +743,8 @@ function renderFlashcard(out){
     <div class="fc-stage">
       <div class="fc-card" id="fc-card" onclick="this.classList.toggle('flipped')">
         <div class="fc-inner">
-          <div class="fc-face fc-front">${card.term}</div>
-          <div class="fc-face fc-back">${card.definition}</div>
+          <div class="fc-face fc-front">${escapeHtml(card.term)}</div>
+          <div class="fc-face fc-back">${escapeHtml(card.definition)}</div>
         </div>
       </div>
       <div class="fc-hint">Click card to flip</div>
