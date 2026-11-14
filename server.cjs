@@ -7,7 +7,7 @@ const { URL } = require("node:url");
 const { generateStudyText } = require("./api/ai.cjs");
 
 const HTML_PATH = path.join(__dirname, "StudyMate_AI_prototype.html");
-const MAX_BODY_BYTES = 16 * 1024;
+const MAX_BODY_BYTES = 48 * 1024;
 const WINDOW_MS = 60 * 1000;
 const MAX_REQUESTS_PER_WINDOW = 12;
 const requestWindows = new Map();
@@ -28,7 +28,7 @@ function setSecurityHeaders(response) {
   response.setHeader("permissions-policy", "camera=(), microphone=(), geolocation=()");
   response.setHeader(
     "content-security-policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
   );
 }
 
