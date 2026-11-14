@@ -1,0 +1,14 @@
+{
+  "name": "studymate-ai-prototype",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Study planner, doubt solver, quiz and flashcards with a server-side AI proxy",
+  "scripts": {
+    "start": "node server.cjs",
+    "test": "node --test tests/*.test.cjs",
+    "check": "node --check server.cjs && node --check api/ai.cjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
